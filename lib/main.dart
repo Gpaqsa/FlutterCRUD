@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'viewmodels/objects_viewmodel.dart';
 import 'views/list_screen.dart';
+import 'core/theme.dart';
 
 void main() {
   runApp(
@@ -19,12 +20,10 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Restful Objects',
+      title: 'Restful API Demo APP',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.theme,
+
       home: const ListScreen(),
     );
   }

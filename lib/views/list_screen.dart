@@ -22,7 +22,10 @@ class _ListScreenState extends State<ListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Objects'), centerTitle: true),
+      appBar: AppBar(
+        title: const Text('Restful API Demo APP'),
+        centerTitle: true,
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => _navigateToForm(context),
         child: const Icon(Icons.add),

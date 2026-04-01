@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../data/models/object_model.dart';
 import '../viewmodels/objects_viewmodel.dart';
+import '../core/theme.dart';
 import 'form_screen.dart';
 
 class DetailScreen extends StatelessWidget {
@@ -11,42 +12,162 @@ class DetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(object.name),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.edit),
-            onPressed: () => _navigateToEdit(context),
+          _AppBarIconBtn(
+            icon: Icons.edit_outlined,
+            bgColor: AppColors.greenLight,
+            iconColor: AppColors.green,
+            onTap: () => _navigateToEdit(context),
           ),
-          IconButton(
-            icon: const Icon(Icons.delete, color: Colors.red),
-            onPressed: () => _confirmDelete(context),
+          const SizedBox(width: 8),
+          _AppBarIconBtn(
+            icon: Icons.delete_outline,
+            bgColor: const Color(0xFFFDECEA),
+            iconColor: const Color(0xFFE24B4A),
+            onTap: () => _confirmDelete(context),
           ),
+          const SizedBox(width: 12),
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 40),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _InfoTile(label: 'ID', value: object.id),
-            _InfoTile(label: 'Name', value: object.name),
+            // ── Hero card: ID + Name ───────────────────────────
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppColors.green,
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      'ID · ${object.id}',
+                      style: const TextStyle(
+                        fontFamily: 'DMSans',
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white70,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    object.name,
+                    style: const TextStyle(
+                      fontFamily: 'DMSerifDisplay',
+                      fontSize: 22,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.white,
+                      height: 1.25,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // ── Data fields ────────────────────────────────────
             if (object.data != null && object.data!.isNotEmpty) ...[
-              const SizedBox(height: 20),
-              const Text(
-                'Details',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              _SectionLabel(label: 'Details'),
+              const SizedBox(height: 8),
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppColors.creamBorder),
+                ),
+                child: Column(
+                  children: [
+                    ...object.data!.entries.toList().asMap().entries.map((e) {
+                      final isLast = e.key == object.data!.entries.length - 1;
+                      return _DetailRow(
+                        label: e.value.key,
+                        value: e.value.value.toString(),
+                        isLast: isLast,
+                      );
+                    }),
+                  ],
+                ),
               ),
-              const Divider(),
-              ...object.data!.entries.map(
-                (e) => _InfoTile(label: e.key, value: e.value.toString()),
+            ] else ...[
+              _SectionLabel(label: 'Details'),
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AppColors.creamBorder),
+                ),
+                child: Text(
+                  'No additional data available.',
+                  style: textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textLight,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
               ),
-            ] else
-              const Padding(
-                padding: EdgeInsets.only(top: 20),
-                child: Text('No additional data available.'),
-              ),
+            ],
+
+            const SizedBox(height: 32),
+
+            // ── Action buttons ─────────────────────────────────
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _navigateToEdit(context),
+                    icon: const Icon(Icons.edit_outlined, size: 17),
+                    label: const Text('Edit Object'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _confirmDelete(context),
+                    icon: const Icon(
+                      Icons.delete_outline,
+                      size: 17,
+                      color: Color(0xFFE24B4A),
+                    ),
+                    label: const Text(
+                      'Delete',
+                      style: TextStyle(color: Color(0xFFE24B4A)),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFFE24B4A),
+                      side: const BorderSide(color: Color(0xFFF5C4C4)),
+                      backgroundColor: const Color(0xFFFDECEA),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
@@ -69,11 +190,17 @@ class DetailScreen extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Cancel'),
+            child: Text('Cancel', style: TextStyle(color: AppColors.textMid)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            child: const Text(
+              'Delete',
+              style: TextStyle(
+                color: Color(0xFFE24B4A),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
         ],
       ),
@@ -99,16 +226,79 @@ class DetailScreen extends StatelessWidget {
   }
 }
 
-class _InfoTile extends StatelessWidget {
-  final String label;
-  final String value;
+// ── Helper widgets ──────────────────────────────────────────────────────────
 
-  const _InfoTile({required this.label, required this.value});
+class _AppBarIconBtn extends StatelessWidget {
+  final IconData icon;
+  final Color bgColor;
+  final Color iconColor;
+  final VoidCallback onTap;
+
+  const _AppBarIconBtn({
+    required this.icon,
+    required this.bgColor,
+    required this.iconColor,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 34,
+        height: 34,
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Icon(icon, size: 17, color: iconColor),
+      ),
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  final String label;
+  const _SectionLabel({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      label.toUpperCase(),
+      style: const TextStyle(
+        fontFamily: 'DMSans',
+        fontSize: 11,
+        fontWeight: FontWeight.w500,
+        color: AppColors.textLight,
+        letterSpacing: 0.08,
+      ),
+    );
+  }
+}
+
+class _DetailRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final bool isLast;
+
+  const _DetailRow({
+    required this.label,
+    required this.value,
+    this.isLast = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+      decoration: BoxDecoration(
+        border: isLast
+            ? null
+            : const Border(
+                bottom: BorderSide(color: AppColors.creamDark, width: 1),
+              ),
+      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -117,12 +307,24 @@ class _InfoTile extends StatelessWidget {
             child: Text(
               label,
               style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                color: Colors.grey,
+                fontFamily: 'DMSans',
+                fontSize: 13,
+                fontWeight: FontWeight.w400,
+                color: AppColors.textLight,
               ),
             ),
           ),
-          Expanded(child: Text(value, style: const TextStyle(fontSize: 15))),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                fontFamily: 'DMSans',
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: AppColors.textDark,
+              ),
+            ),
+          ),
         ],
       ),
     );
