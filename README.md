@@ -1,17 +1,65 @@
-# fluent_crud
+# Restful API Demo App
 
-A new Flutter project.
+A Flutter app that consumes [restful-api.dev](https://restful-api.dev) with full CRUD support.
 
-## Getting Started
+---
 
-This project is a starting point for a Flutter application.
+## Stack
 
-A few resources to get you started if this is your first Flutter project:
+- **Flutter** + **Provider** (MVVM)
+- **http** package
+- **restful-api.dev** public API
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+---
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## Setup
+
+```bash
+git clone https://github.com/Gpaqsa/FlutterCRUD.git
+cd FLUENT_CRUD
+flutter pub get
+flutter run
+```
+
+---
+
+## Screens
+
+- **List** — view all objects, swipe left to delete, pull to refresh
+- **Detail** — view all object data, edit or delete
+- **Form** — create or edit objects with dynamic key/value fields
+
+---
+
+## Project Structure
+
+```
+lib/
+├── main.dart
+├── core/
+│   └── constants.dart
+|   ├── theme.dart
+├── data/
+│   ├── models/object_model.dart
+│   └── services/api_service.dart
+├── viewmodels/
+│   └── objects_viewmodel.dart
+└── views/
+    ├── list_screen.dart
+    ├── detail_screen.dart
+    └── form_screen.dart
+```
+
+---
+
+## API
+
+Base URL: `https://api.restful-api.dev`
+
+| Method | Endpoint | Action |
+|--------|----------|--------|
+| GET | `/objects` | List all |
+| GET | `/objects/{id}` | Get one |
+| POST | `/objects` | Create |
+| PUT | `/objects/{id}` | Update |
+| DELETE | `/objects/{id}` | Delete |
