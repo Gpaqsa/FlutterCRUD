@@ -146,7 +146,8 @@ class AppTheme {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.all(Radius.circular(14)),
       ),
-      contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+      contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      minVerticalPadding: 0,
     ),
 
     // Divider

@@ -52,12 +52,11 @@ class _ListScreenState extends State<ListScreen> {
               separatorBuilder: (_, __) => const SizedBox(height: 8),
               itemBuilder: (context, index) {
                 final object = vm.objects[index];
-
-                // ── only change: wrapped in Dismissible ──────────
-                return Dismissible(
+                return _SwipeToDeleteCard(
                   key: ValueKey(object.id),
-                  direction: DismissDirection.endToStart,
-                  confirmDismiss: (_) async {
+                  object: object,
+                  onTap: () => _navigateToDetail(context, object),
+                  onDelete: () async {
                     final confirmed = await showDialog<bool>(
                       context: context,
                       builder: (ctx) => AlertDialog(
@@ -80,12 +79,10 @@ class _ListScreenState extends State<ListScreen> {
                         ],
                       ),
                     );
-
                     if (confirmed == true && context.mounted) {
                       final success = await context
                           .read<ObjectsViewModel>()
                           .deleteObject(object.id);
-
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
@@ -97,48 +94,9 @@ class _ListScreenState extends State<ListScreen> {
                           ),
                         );
                       }
-
-                      // return true = animate card out on success
-                      // return false = snap card back on failure
-                      return success;
                     }
-
-                    // user cancelled → snap back
-                    return false;
                   },
-                  background: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    alignment: Alignment.centerRight,
-                    padding: const EdgeInsets.only(right: 20),
-                    child: const Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.delete_outline,
-                          color: Colors.white,
-                          size: 22,
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          'Delete',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  child: _ObjectCard(
-                    object: object,
-                    onTap: () => _navigateToDetail(context, object),
-                  ),
                 );
-                // ── end of change ────────────────────────────────
               },
             ),
           );
@@ -162,6 +120,123 @@ class _ListScreenState extends State<ListScreen> {
   }
 }
 
+// ── Custom swipe card ────────────────────────────────────────────────────────
+
+class _SwipeToDeleteCard extends StatefulWidget {
+  final ObjectModel object;
+  final VoidCallback onTap;
+  final VoidCallback onDelete;
+
+  const _SwipeToDeleteCard({
+    super.key,
+    required this.object,
+    required this.onTap,
+    required this.onDelete,
+  });
+
+  @override
+  State<_SwipeToDeleteCard> createState() => _SwipeToDeleteCardState();
+}
+
+class _SwipeToDeleteCardState extends State<_SwipeToDeleteCard> {
+  static const double _deleteButtonWidth = 80.0;
+  static const double _cardHeight = 80.0;
+
+  double _dragOffset = 0.0;
+  bool _isOpen = false;
+
+  void _onHorizontalDragUpdate(DragUpdateDetails details) {
+    setState(() {
+      _dragOffset += details.delta.dx;
+      _dragOffset = _dragOffset.clamp(-_deleteButtonWidth, 0.0);
+    });
+  }
+
+  void _onHorizontalDragEnd(DragEndDetails details) {
+    final velocity = details.primaryVelocity ?? 0;
+    if (_dragOffset < -_deleteButtonWidth / 2 || velocity < -300) {
+      setState(() {
+        _dragOffset = -_deleteButtonWidth;
+        _isOpen = true;
+      });
+    } else {
+      _close();
+    }
+  }
+
+  void _close() {
+    setState(() {
+      _dragOffset = 0.0;
+      _isOpen = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onHorizontalDragUpdate: _onHorizontalDragUpdate,
+      onHorizontalDragEnd: _onHorizontalDragEnd,
+      onTap: _isOpen ? _close : null,
+      child: SizedBox(
+        height: _cardHeight,
+        child: Stack(
+          children: [
+            // ── Red delete button (fixed behind) ──────────────
+            Positioned(
+              right: 0,
+              top: 0,
+              bottom: 0,
+              width: _deleteButtonWidth,
+              child: GestureDetector(
+                onTap: () {
+                  _close();
+                  widget.onDelete();
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: const Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.delete_outline, color: Colors.white, size: 22),
+                      SizedBox(height: 4),
+                      Text(
+                        'Delete',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // ── Card slides on top ─────────────────────────────
+            AnimatedContainer(
+              duration: _dragOffset == 0.0 || _dragOffset == -_deleteButtonWidth
+                  ? const Duration(milliseconds: 200)
+                  : Duration.zero,
+              curve: Curves.easeOut,
+              transform: Matrix4.translationValues(_dragOffset, 0, 0),
+              child: _ObjectCard(
+                object: widget.object,
+                onTap: _isOpen ? _close : widget.onTap,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Card UI ──────────────────────────────────────────────────────────────────
+
 class _ObjectCard extends StatelessWidget {
   final ObjectModel object;
   final VoidCallback onTap;
@@ -172,8 +247,10 @@ class _ObjectCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 2,
+      margin: EdgeInsets.zero,
       child: ListTile(
         onTap: onTap,
+        // minVerticalPadding: 18,
         leading: CircleAvatar(
           backgroundColor: Theme.of(context).colorScheme.primaryContainer,
           child: Text(
@@ -194,6 +271,8 @@ class _ObjectCard extends StatelessWidget {
     );
   }
 }
+
+// ── Error view ───────────────────────────────────────────────────────────────
 
 class _ErrorView extends StatelessWidget {
   final String message;
