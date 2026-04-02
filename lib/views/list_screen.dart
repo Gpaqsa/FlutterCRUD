@@ -52,10 +52,93 @@ class _ListScreenState extends State<ListScreen> {
               separatorBuilder: (_, __) => const SizedBox(height: 8),
               itemBuilder: (context, index) {
                 final object = vm.objects[index];
-                return _ObjectCard(
-                  object: object,
-                  onTap: () => _navigateToDetail(context, object),
+
+                // ── only change: wrapped in Dismissible ──────────
+                return Dismissible(
+                  key: ValueKey(object.id),
+                  direction: DismissDirection.endToStart,
+                  confirmDismiss: (_) async {
+                    final confirmed = await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('Delete Object'),
+                        content: Text(
+                          'Are you sure you want to delete "${object.name}"?',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, false),
+                            child: const Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, true),
+                            child: const Text(
+                              'Delete',
+                              style: TextStyle(color: Colors.red),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+
+                    if (confirmed == true && context.mounted) {
+                      final success = await context
+                          .read<ObjectsViewModel>()
+                          .deleteObject(object.id);
+
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              success
+                                  ? '"${object.name}" deleted.'
+                                  : 'Failed to delete. Try again.',
+                            ),
+                          ),
+                        );
+                      }
+
+                      // return true = animate card out on success
+                      // return false = snap card back on failure
+                      return success;
+                    }
+
+                    // user cancelled → snap back
+                    return false;
+                  },
+                  background: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    alignment: Alignment.centerRight,
+                    padding: const EdgeInsets.only(right: 20),
+                    child: const Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.delete_outline,
+                          color: Colors.white,
+                          size: 22,
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'Delete',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  child: _ObjectCard(
+                    object: object,
+                    onTap: () => _navigateToDetail(context, object),
+                  ),
                 );
+                // ── end of change ────────────────────────────────
               },
             ),
           );
